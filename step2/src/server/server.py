@@ -21,6 +21,15 @@ import structlog
 from google.cloud import storage
 from grpc_health.v1 import health_pb2, health_pb2_grpc
 
+from opentelemetry import propagate, trace
+from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.propagators.cloud_trace_propagator import CloudTraceFormatPropagator
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+
+RequestsInstrumentor().instrument()
+
 import shakesapp_pb2
 import shakesapp_pb2_grpc
 
@@ -53,7 +62,13 @@ def get_json_logger():
 
 
 logger = get_json_logger()
-
+exporter = CloudTraceSpanExporter()
+trace.set_tracer_provider(TracerProvider())
+trace.get_tracer_provider().add_span_processor(
+        SimpleSpanProcessor(exporter)
+)
+tracer = trace.get_tracer(__name__)
+propagate.set_global_textmap(CloudTraceFormatPropagator())
 
 class ShakesappService(shakesapp_pb2_grpc.ShakespeareServiceServicer):
     """ShakesappService accepts request from the clients and search query
@@ -65,19 +80,22 @@ class ShakesappService(shakesapp_pb2_grpc.ShakespeareServiceServicer):
 
     def GetMatchCount(self, request, context):
         logger.info(f"query: {request.query}")
-
+        
         texts = read_files_multi()
         count = 0
 
         query = request.query.lower()
         # TODO: intentionally implemented in inefficient way.
-        for text in texts:
+        with tracer.start_as_current_span("loadgen") as root_span:
+          root_span.add_event(name="count_start")
+          for text in texts:
             lines = text.split("\n")
             for line in lines:
                 line = line.lower()
                 matched = re.search(query, line)
                 if matched is not None:
                     count += 1
+          root_span.add_event(name="count_end")
         logger.info(f"query '{query}' matched count: {count}")
         return shakesapp_pb2.ShakespeareResponse(match_count=count)
 
