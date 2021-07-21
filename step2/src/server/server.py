@@ -86,7 +86,7 @@ class ShakesappService(shakesapp_pb2_grpc.ShakespeareServiceServicer):
 
         query = request.query.lower()
         # TODO: intentionally implemented in inefficient way.
-        with tracer.start_as_current_span("loadgen") as root_span:
+        with tracer.start_as_current_span("matchcount") as root_span:
           root_span.add_event(name="count_start")
           for text in texts:
             lines = text.split("\n")
