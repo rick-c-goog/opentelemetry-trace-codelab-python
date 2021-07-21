@@ -67,7 +67,6 @@ trace.set_tracer_provider(TracerProvider())
 trace.get_tracer_provider().add_span_processor(
         SimpleSpanProcessor(exporter)
 )
-tracer = trace.get_tracer(__name__)
 propagate.set_global_textmap(CloudTraceFormatPropagator())
 
 class ShakesappService(shakesapp_pb2_grpc.ShakespeareServiceServicer):
@@ -80,7 +79,7 @@ class ShakesappService(shakesapp_pb2_grpc.ShakespeareServiceServicer):
 
     def GetMatchCount(self, request, context):
         logger.info(f"query: {request.query}")
-        
+        tracer = trace.get_tracer(__name__)
         texts = read_files_multi()
         count = 0
 

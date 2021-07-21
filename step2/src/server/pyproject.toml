@@ -17,6 +17,9 @@ protobuf = "^3.15.5"
 grpcio-health-checking = "^1.36.1"
 google-cloud-storage = "^1.36.1"
 structlog = "^21.1.0"
+opentelemetry-propagator-gcp = "^1.0.0rc0"
+opentelemetry-exporter-gcp-trace = "^1.0.0rc0"
+opentelemetry-instrumentation-requests = "0.20b0"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
