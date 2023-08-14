@@ -24,6 +24,7 @@ RUN poetry build
 FROM base as runner
 COPY --from=builder /src/dist/*.whl /
 RUN pip install /*.whl && rm /*.whl
+RUN pip install markupsafe==2.0.1
 COPY ./config.py /config.py
 
 EXPOSE 8080
